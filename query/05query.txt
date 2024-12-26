@@ -1,0 +1,55 @@
+SET LINESIZE 100;
+SET PAGESIZE 300;
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'DD/MM/YY';
+
+-- Prompt user for input dates
+ACCEPT StartDate CHAR PROMPT 'Enter Start Date (DD-MM-YYYY): ';
+ACCEPT EndDate CHAR PROMPT 'Enter End Date (DD-MM-YYYY): ';
+
+TTITLE  CENTER 'Top Rented Cars Report' SKIP 1 - 
+        CENTER 'From ' '&StartDate' ' To ' '&EndDate' SKIP 1 - 
+
+COLUMN car_ID FORMAT A12
+COLUMN brand FORMAT A20
+COLUMN model FORMAT A30
+COLUMN trans_Type FORMAT A20
+COLUMN Rental_Count FORMAT 9999
+
+SELECT 
+    Car_ID,
+    Brand,
+    Model,
+    trans_Type,
+    Rental_Count
+FROM (
+    SELECT 
+        R.car_id AS Car_ID,
+        C.brand AS Brand,
+        C.model AS Model,
+        C.trans_type AS trans_Type,
+        COUNT(R.reserv_id) AS Rental_Count,
+        ROW_NUMBER() OVER (PARTITION BY C.brand, C.trans_type ORDER BY COUNT(R.reserv_id) DESC) AS RowRank
+    FROM 
+        reservation R
+    JOIN 
+        car C ON R.car_id = C.car_id
+    WHERE
+        R.start_date BETWEEN TO_DATE('&StartDate', 'DD-MM-YYYY') 
+        AND TO_DATE('&EndDate', 'DD-MM-YYYY')
+        AND R.reservation_stat = 'COMPLETED' -- Filter for completed rentals
+    GROUP BY 
+        R.car_id, C.brand, C.model, C.trans_type
+) RankedCars
+WHERE 
+    RowRank = 1
+ORDER BY 
+    Rental_Count DESC;
+
+BREAK ON Brand SKIP 1;
+
+COMPUTE SUM OF Rental_Count ON REPORT;
+
+CLEAR BREAKS;
+CLEAR COMPUTES;
+TTITLE OFF;

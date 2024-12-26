@@ -1,0 +1,26 @@
+create table maintenance (
+	mainte_id       char(6)       not null,
+	mainte_date	date	      not null,
+	mainte_fees	number(10,2)  not null,
+	mainte_type	varchar(50)   not null,
+	next_mainte_date  date	      null,
+	car_id 		  char(5)     not null,
+primary key(mainte_id),
+foreign key(car_id) references car(car_id)
+);
+	 
+	
+	  
+
+	
+
+	
+
+	
+	
+
+	
+
+	
+
+	

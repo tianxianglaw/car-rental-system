@@ -1,0 +1,64 @@
+SET LINESIZE 120;
+SET PAGESIZE 130;
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'DD-MON-YY';
+
+ACCEPT input_year PROMPT 'Enter year (YYYY): ';
+
+TTITLE CENTER 'Car Rental Services' SKIP 1 -
+       CENTER 'Most Reservations Month in a Year Report' SKIP 2-
+
+COLUMN Reservation_ID FORMAT A14 HEADING 'Reservation ID';
+COLUMN Reservation_Month FORMAT A17 HEADING 'Reservation Month';
+COLUMN Start_Date FORMAT A10 HEADING 'Start Date';
+COLUMN Reservation_Status FORMAT A18 HEADING 'Reservation Status';
+COLUMN Pickup_Location FORMAT A16 HEADING 'Pick Up Location';
+COLUMN Dropoff_Location FORMAT A17 HEADING 'Drop Off Location';
+COLUMN Customer_ID FORMAT A11 HEADING 'Customer ID';
+COLUMN Car_ID FORMAT A6 HEADING 'Car ID';
+
+WITH MonthlyReservations AS (
+    SELECT
+        TO_CHAR(R.start_date, 'Month') AS Reservation_Month,
+        COUNT(R.reserv_id) AS Total_Reservations
+    FROM
+        Reservation R
+    WHERE
+        TO_CHAR(R.start_date, 'YYYY') = '&input_year'
+    GROUP BY
+        TO_CHAR(R.start_date, 'Month')
+),
+MaxReservationsMonth AS (
+    SELECT
+        Reservation_Month,
+        Total_Reservations
+    FROM
+        MonthlyReservations
+    WHERE
+        Total_Reservations = (
+            SELECT MAX(Total_Reservations)
+            FROM MonthlyReservations
+        )
+)
+SELECT
+    R.reserv_id AS Reservation_ID,
+    TO_CHAR(R.start_date, 'Month') AS Reservation_Month,
+    R.start_date AS Start_Date,
+    R.reservation_stat AS Reservation_Status,
+    R.pick_location AS Pickup_Location,
+    R.drop_location AS Dropoff_Location,
+    R.cust_id AS Customer_ID,
+    R.car_id AS Car_ID
+FROM
+    Reservation R
+WHERE
+    TO_CHAR(R.start_date, 'Month') IN (
+        SELECT Reservation_Month
+        FROM MaxReservationsMonth
+    )
+    AND TO_CHAR(R.start_date, 'YYYY') = '&input_year'
+ORDER BY
+    Reservation_Month, R.start_date;
+
+CLEAR COLUMNS;
+TTITLE OFF;

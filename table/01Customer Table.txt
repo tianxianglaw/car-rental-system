@@ -1,0 +1,12 @@
+CREATE TABLE customer (
+   cust_id          CHAR(7)       NOT NULL,
+   first_name       VARCHAR(20)   NOT NULL,
+   last_name        VARCHAR(20)   NOT NULL,
+   cust_email       VARCHAR(40)   NOT NULL,
+   cust_phone_no    VARCHAR(20)   NOT NULL,
+   cust_nationality VARCHAR(20)   NOT NULL,
+   cust_icpn        VARCHAR(25)   NOT NULL,
+   PRIMARY KEY (cust_id),
+   CONSTRAINT chk_email CHECK (REGEXP_LIKE(cust_email, '[a-zA-Z0-9][\w.]*@[a-zA-Z]+\.[a-zA-Z]+$')) 
+);
+

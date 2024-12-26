@@ -1,0 +1,66 @@
+SET LINESIZE 130;
+SET PAGESIZE 100;
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'DD-MON-YY';
+
+ACCEPT input_year PROMPT 'Enter year (YYYY): ';
+
+TTITLE CENTER 'Car Rental Services' SKIP 1 -
+       CENTER 'Top 5 Most Profitable Cars in a Year Report' SKIP 2-
+
+COLUMN Rank FORMAT 999 HEADING 'Rank';
+COLUMN Car_ID FORMAT A6 HEADING 'Car ID';
+COLUMN Brand FORMAT A12 HEADING 'Brand';
+COLUMN Model FORMAT A12 HEADING 'Model';
+COLUMN Plate_Number FORMAT A12 HEADING 'Plate Number';
+COLUMN Transmission_Type FORMAT A16 HEADING 'Transmission Type';
+COLUMN Total_Profit FORMAT 999,999.99 HEADING 'Total Profit';
+
+WITH CarProfits AS (
+    SELECT
+        C.car_id,
+        C.brand,
+        C.model,
+        C.plate_no AS Plate_Number,
+        C.trans_type AS Transmission_Type,
+        SUM(P.rental_amt + P.insurance_amt - P.deposit) AS Total_Profit
+    FROM
+        car C
+    JOIN
+        reservation R ON C.car_id = R.car_id
+    JOIN
+        payment P ON R.reserv_id = P.reserv_id
+    WHERE
+        TO_CHAR(P.pay_date, 'YYYY') = '&input_year'
+    GROUP BY
+        C.car_id, C.brand, C.model, C.plate_no, C.trans_type
+),
+RankedCarProfits AS (
+    SELECT
+        CP.car_id,
+        CP.brand,
+        CP.model,
+        CP.Plate_Number,
+        CP.Transmission_Type,
+        CP.Total_Profit,
+        RANK() OVER (ORDER BY CP.Total_Profit DESC) AS Rank
+    FROM
+        CarProfits CP
+)
+SELECT
+    RCP.Rank,
+    RCP.car_id AS Car_ID,
+    RCP.brand AS Brand,
+    RCP.model AS Model,
+    RCP.Plate_Number,
+    RCP.Transmission_Type,
+    RCP.Total_Profit
+FROM
+    RankedCarProfits RCP
+WHERE
+    RCP.Rank <= 5
+ORDER BY
+    RCP.Rank;
+
+CLEAR COLUMNS;
+TTITLE OFF;

@@ -1,0 +1,55 @@
+
+
+SET LINESIZE 100
+SET PAGESIZE 300
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'DD/MM/YY';
+
+ACCEPT start_date PROMPT 'Enter Start Date (DD-MM-YYYY): ';
+ACCEPT end_date PROMPT 'Enter End Date (DD-MM-YYYY): ';
+
+TTITLE CENTER 'Branch Profitability Report' SKIP 2-
+       CENTER 'From ' '&start_date' ' to ' '&end_date' SKIP 2-
+
+COLUMN Branch FORMAT A10
+COLUMN Total_Revenue FORMAT $999,999,999.99
+COLUMN Maintenance_Cost FORMAT $999,999,999.99
+COLUMN Cancellation_Cost FORMAT $999,999,999.99
+COLUMN Total_Cost FORMAT $999,999,999.99
+COLUMN Net_Profit FORMAT $999,999,999.99
+
+SELECT 
+    r.pick_location AS Branch,
+    SUM(p.pay_amt) AS Total_Revenue,
+    NVL(SUM(m.mainte_fees), 0) AS Maintenance_Cost,
+    NVL(SUM(cancl.refund_amt), 0) AS Cancellation_Cost,
+    (NVL(SUM(m.mainte_fees), 0) + NVL(SUM(cancl.refund_amt), 0)) AS Total_Cost,
+    (SUM(p.pay_amt) - (NVL(SUM(m.mainte_fees), 0) + NVL(SUM(cancl.refund_amt), 0))) AS Net_Profit
+FROM 
+    Reservation r
+JOIN 
+    Car c ON r.car_id = c.car_id
+LEFT JOIN 
+    Payment p ON r.reserv_id = p.reserv_id
+LEFT JOIN 
+    Maintenance m ON c.car_id = m.car_id
+LEFT JOIN 
+    Cancellation cancl ON r.reserv_id = cancl.reserv_id
+WHERE 
+    r.start_date BETWEEN TO_DATE('&start_date', 'DD-MM-YYYY') AND TO_DATE('&end_date', 'DD-MM-YYYY')
+GROUP BY 
+    r.pick_location
+ORDER BY 
+    Net_Profit DESC;
+
+BREAK ON Branch SKIP 1
+
+COMPUTE SUM OF Total_Revenue ON REPORT
+COMPUTE SUM OF Maintenance_Cost ON REPORT
+COMPUTE SUM OF Cancellation_Cost ON REPORT
+COMPUTE SUM OF Total_Cost ON REPORT
+COMPUTE SUM OF Net_Profit ON REPORT
+
+CLEAR BREAKS
+CLEAR COMPUTES
+TTITLE OFF

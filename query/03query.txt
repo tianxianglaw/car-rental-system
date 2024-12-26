@@ -1,0 +1,27 @@
+set linesize 150;
+ACCEPT input_year CHAR PROMPT 'Enter the year (e.g., 23 for 2023): '
+
+
+SELECT * FROM (
+    SELECT 
+        c.first_name || ' ' || c.last_name AS customer_name,
+        c.cust_nationality,
+        c.cust_email,
+        COUNT(r.reserv_id) AS num_occurrences,
+        SUM(p.pay_amt) AS total_payment_amount
+    FROM 
+        reservation r
+    JOIN 
+        customer c ON r.cust_id = c.cust_id
+    JOIN 
+        payment p ON r.reserv_id = p.reserv_id
+    WHERE 
+        r.reserv_id LIKE '&input_year%' 
+        AND r.reservation_stat = 'COMPLETED'
+    GROUP BY 
+        c.first_name, c.last_name, c.cust_nationality, c.cust_email
+    ORDER BY 
+        num_occurrences DESC,
+        total_payment_amount DESC
+)
+WHERE ROWNUM <= 5;
